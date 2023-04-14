@@ -9,13 +9,7 @@ import * as d3 from 'd3';
 })
 export class AppComponent implements OnInit {
   title = 'arguments';
-  private data = [
-    { Framework: 'Vue', Stars: '166443', Released: '2014' },
-    { Framework: 'React', Stars: '150793', Released: '2013' },
-    { Framework: 'Angular', Stars: '62342', Released: '2016' },
-    { Framework: 'Backbone', Stars: '27647', Released: '2010' },
-    { Framework: 'Ember', Stars: '21471', Released: '2011' },
-  ];
+
   private svg: any = null;
   private margin = 50;
   private width = 750 - this.margin * 2;
@@ -188,9 +182,6 @@ export class AppComponent implements OnInit {
   };
 
   ngOnInit(): void {
-    //this.createSvg();
-    //this.drawBars(this.data);
-
     let d3cola = cola
       .d3adaptor(d3)
       .avoidOverlaps(true)
@@ -213,97 +204,66 @@ export class AppComponent implements OnInit {
       .append('g')
       .attr('transform', 'translate(80,80) scale(0.7)');
 
-    var groupsLayer = vis.append('g');
-    var nodesLayer = vis.append('g');
-    var linksLayer = vis.append('g');
-
-    var graph = {},
-      nodeLookup = {};
-
-    // define arrow markers for graph links
-    outer
-      .append('svg:defs')
-      .append('svg:marker')
-      .attr('id', 'end-arrow')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 5)
-      .attr('markerWidth', 3)
-      .attr('markerHeight', 3)
-      .attr('orient', 'auto')
-      .append('svg:path')
-      .attr('d', 'M0,-5L10,0L0,5L2,0')
-      .attr('stroke-width', '0px')
-      .attr('fill', '#000');
-
-    var node = nodesLayer
-      .selectAll('.node')
-      .data(this.graph.nodes)
-      .enter()
-      .append('rect')
-      .attr('class', 'node')
-
-      .call(d3cola.drag);
-
-    var label = nodesLayer
-      .selectAll('.label')
-      .data(this.graph.nodes)
-      .enter()
-      .append('text')
-      .attr('class', 'label')
-      .call(d3cola.drag);
-
     d3cola
       .nodes(this.graph.nodes)
       .links(this.graph.links)
       .constraints(this.graph.constraints)
+      //ERROR TypeError: Cannot read properties of undefined (reading 'neighbours')
       .start();
 
-    d3cola.on('tick', function () {});
-  }
+    vis
+      .append('svg:defs')
+      .append('svg:marker')
+      .attr('id', 'end-arrow')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 6)
+      .attr('markerWidth', 3)
+      .attr('markerHeight', 3)
+      .attr('orient', 'auto')
+      .append('svg:path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', '#000');
 
-  private createSvg(): void {
-    this.svg = d3
-      .select('figure#bar')
-      .append('svg')
-      .attr('width', this.width + this.margin * 2)
-      .attr('height', this.height + this.margin * 2)
-      .append('g')
-      .attr('transform', 'translate(' + this.margin + ',' + this.margin + ')');
-  }
-
-  private drawBars(data: any[]): void {
-    // Create the X-axis band scale
-    const x = d3
-      .scaleBand()
-      .range([0, this.width])
-      .domain(data.map((d) => d.Framework))
-      .padding(0.2);
-
-    // Draw the X-axis on the DOM
-    this.svg
-      .append('g')
-      .attr('transform', 'translate(0,' + this.height + ')')
-      .call(d3.axisBottom(x))
-      .selectAll('text')
-      .attr('transform', 'translate(-10,0)rotate(-45)')
-      .style('text-anchor', 'end');
-
-    // Create the Y-axis band scale
-    const y = d3.scaleLinear().domain([0, 200000]).range([this.height, 0]);
-
-    // Draw the Y-axis on the DOM
-    this.svg.append('g').call(d3.axisLeft(y));
-
-    // Create and fill the bars
-    this.svg
-      .selectAll('bars')
-      .data(data)
+    let path = vis
+      .selectAll('.link')
+      .data(this.graph.links)
       .enter()
-      .append('rect')
-      .attr('x', (d: any) => x(d.Framework))
-      .attr('y', (d: any) => y(d.Stars))
-      .attr('width', x.bandwidth())
-      .attr('height', (d: any) => this.height - y(d.Stars))
-      .attr('fill', '#d04a35');
+      .append('svg:path')
+      .attr('class', 'link');
+
+    let node = vis
+      .selectAll('.node')
+      .data(this.graph.nodes)
+      .enter()
+      .append('circle')
+      .attr('class', 'node')
+      .attr('r', 5)
+      .call(d3cola.drag);
+
+    d3cola.on('tick', function () {
+      // draw directed edges with proper padding from node centers
+      path.attr('d', function (d) {
+        // var deltaX = d.target.x - d.source.x,
+        //     deltaY = d.target.y - d.source.y,
+        //     dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
+        //     normX = deltaX / dist,
+        //     normY = deltaY / dist,
+        //     sourcePadding = nodeRadius,
+        //     targetPadding = nodeRadius + 2,
+        //     sourceX = d.source.x + (sourcePadding * normX),
+        //     sourceY = d.source.y + (sourcePadding * normY),
+        //     targetX = d.target.x - (targetPadding * normX),
+        //     targetY = d.target.y - (targetPadding * normY);
+        return 'M' + 5 + ',' + 5 + 'L' + 5 + ',' + 5;
+      });
+
+      node
+        .attr('cx', function (d) {
+          return d.x;
+        })
+        .attr('cy', function (d) {
+          return d.y;
+        });
+    });
   }
 }
